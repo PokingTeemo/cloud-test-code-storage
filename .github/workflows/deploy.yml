@@ -24,3 +24,15 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Delete old images from ECR
+      env:
+        AWS_REGION: ap-northeast-2
+        ECR_REGISTRY: 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com
+        ECR_REPOSITORY: firstimg
+        IMAGE_TAG_KEEP: latest
+      run: |
+        old_images=$(aws ecr list-images --region $AWS_REGION --repository-name $ECR_REPOSITORY --query 'imageIds[?imageTag!=`'$IMAGE_TAG_KEEP'`]' --output json | jq -r '.[] | .imageDigest')
+        for image_digest in $old_images; do
+          aws ecr batch-delete-image --region $AWS_REGION --repository-name $ECR_REPOSITORY --image-ids imageDigest=$image_digest
+        done
