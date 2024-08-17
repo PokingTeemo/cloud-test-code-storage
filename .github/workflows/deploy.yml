@@ -1,4 +1,4 @@
-name: Deploy Flask App to AWS ECR
+name: Deploy Flask App to AWS ECR and EC2
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,3 +24,68 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: EC2에서 ECR에 로그인하기
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com
+
+    - name: 기존 EC2에서 실행중인 컨테이너 종료
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo docker ps -q | xargs -r docker stop
+
+    - name: 기존 EC2에 존재하는 모든 컨테이너 삭제
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo docker ps -asq | xargs -r docker rm
+
+    - name: 기존 EC2에 저장되어있는 이미지 삭제
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo docker images -q | xargs -r docker rmi
+
+    - name: EC2에서 도커에서 사용하지 않는 자원 삭제처리
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo docker system prune -af
+
+    - name: EC2에서 도커 이미지를 가져오기
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo docker pull 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg:latest
+
+    - name: ECR에서 불러온 이미지를 도커에서 실행
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo docker stop hdev_server || true
+          sudo docker rm hdev_server || true
+          sudo docker run -d --env-file ~/root/.env -p 5000:5000 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg:latest
