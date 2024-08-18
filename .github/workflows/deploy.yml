@@ -24,7 +24,6 @@ jobs:
       run: |
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg
 
-
     - name: 기존 ECR에 업로드된 lastest 태그 이미지 삭제
       uses: appleboy/ssh-action@master
       with:
@@ -95,10 +94,13 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg
+          export AWS_DEFAULT_REGION=ap-northeast-2
+          export AWS_REGION=ap-northeast-2
+          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com && \
           sudo docker pull 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg:latest
     
-
     - name: ECR에서 불러온 이미지를 도커에서 실행
       uses: appleboy/ssh-action@master
       with:
