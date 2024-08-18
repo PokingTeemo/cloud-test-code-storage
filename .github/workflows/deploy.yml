@@ -27,7 +27,7 @@ jobs:
     - name: ECR에서 이전 이미지 삭제
       run: |
         aws ecr list-images --repository-name firstimg --region ap-northeast-2 --query 'imageIds[?imageTag!=`latest`]' --output json | jq -r '.[] | .imageDigest' | while read image_digest; do
-          aws ecr batch-delete-image --repository-name firstimg --image-ids imageDigest=$image_digest --region ap-northeast-2;
+        aws ecr batch-delete-image --repository-name firstimg --image-ids imageDigest=$image_digest --region ap-northeast-2;
         done
 
     - name: 도커 빌드
