@@ -20,10 +20,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-northeast-2
 
-    - name: Log in to Amazon ECR
+    - name: ECR 로그인
       run: |
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg
-    - name: Build, tag, and push Docker image
+
+    - name: Build
       env:
         ECR_REGISTRY: 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com
         ECR_REPOSITORY: firstimg
