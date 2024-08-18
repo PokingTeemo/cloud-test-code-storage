@@ -24,7 +24,14 @@ jobs:
       run: |
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 471112681394.dkr.ecr.ap-northeast-2.amazonaws.com/firstimg
 
-
+    - name: 기존 ECR에 업로드된 lastest 태그 이미지 삭제
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          aws ecr batch-delete-image --repository-name firstimg --image-ids imageTag=latest
 
     - name: 도커 빌드
       env:
