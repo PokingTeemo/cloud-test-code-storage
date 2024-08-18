@@ -31,7 +31,7 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          aws ecr batch-delete-image --profile ${{ secrets.IAM_PROFILE_USERNAME }} --repository-name firstimg --image-ids imageTag=latest
+          aws ecr batch-delete-image --repository-name firstimg --image-ids imageTag=latest
 
     - name: 도커 빌드
       env:
